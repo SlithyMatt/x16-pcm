@@ -63,7 +63,7 @@ r15L					= r15
 r15H					= r15+1
 
 ; Zero-Page userspace
-ZP_PTR_1          = $00	; first four pointers for temporary use only
+ZP_PTR_1          = $7E	; first four pointers for temporary use only
 ZP_PTR_2          = $22
 ZP_PTR_3          = $24
 ZP_PTR_4          = $26

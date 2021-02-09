@@ -1,5 +1,13 @@
 .include "x16.inc"
 
+STOP = $03
+RETURN = $0D
+SPACE = $20
+COLON = $3A
+CHAR_A = $41
+CHAR_Z = $5A
+CLR = $93
+
 .org $080D
 .segment "STARTUP"
 .segment "INIT"
@@ -12,7 +20,7 @@
 
 .macro PCM_MODE rate, sixteen, stereo, name, stats
    .byte rate
-   .byte (sixteen << 5) | (stereo << 4)
+   .byte $80 | (sixteen << 5) | (stereo << 4)
    .byte name
    .byte stats
 .endmacro
@@ -45,11 +53,27 @@ PCM_MODE   1,1,0,"minimum mono           ","381 hz 16-bit mono, max = 676.5 s   
 PCM_MODE   1,0,1,"minimum 8-bit stereo   ","381 hz 8-bit stereo, max = 676.5 s     " ; Y
 PCM_MODE   1,0,0,"minimum 8-bit mono     ","381 hz 8-bit mono, max = 1352.9 s      " ; Z
 
+filename: .byte "a.bin"
+FILENAME_LENGTH = 5
+
+guide1:
+.byte " 'Persona' by Severah [Creative Commons]",RETURN,RETURN
+.byte " Press any letter key (A-Z) to play back",RETURN
+.byte " the song at different sample rates, bit", RETURN
+.byte " depths and in stereo or mono. The 'max'", RETURN
+.byte " time listed for each encoding is how",RETURN
+.byte " much PCM data can fit in 504 kB of free",RETURN,0
+guide2:
+.byte " banked RAM on the X16. The song will",RETURN
+.byte " play until the 504 kB is exhausted,",RETURN
+.byte " the track is done, or another encoding",RETURN
+.byte " is selected.",RETURN,RETURN
+.byte " Press STOP or Ctrl+C to quit.",0
 
 start:
 
    ; clear display
-   lda #$0D
+   lda #CLR
    jsr CHROUT
 
    ; set display to 2x scale
@@ -66,17 +90,148 @@ start:
    lda #1
    sta sound_bank
 
+   ; print guide
+   ldx #3
+   ldy #0
+   clc
+   jsr PLOT
+   ldx #0
+@print_guide1:
+   lda guide1,x
+   beq @done_guide1
+   jsr CHROUT
+   inx
+   bra @print_guide1
+@done_guide1:
+   ldx #0
+@print_guide2:
+   lda guide2,x
+   beq @done_guide2
+   jsr CHROUT
+   inx
+   bra @print_guide2
+@done_guide2:
+
    jsr init_irq
+
+@flush:
+   jsr GETIN
+   cmp #0
+   bne @flush
 
 mainloop:
    wai
+   jsr GETIN
+   cmp #STOP
+   beq @quit
+   cmp #CHAR_A
+   bmi @check_aflow
+   cmp #(CHAR_Z + 1)
+   bpl @check_aflow
+   jsr load
+   bra mainloop
+@check_aflow:
    lda aflow_trig
-   bne mainloop
-
-   ; TODO fill FIFO
-
-   ; TODO check for input
-
+   beq mainloop
+   jsr fill
+   bra mainloop
+@quit:
    ; Restore IRQ vector
    jsr restore_irq
+   rts
+
+load:
+   sta filename
+   sec
+   sbc #CHAR_A ; 'A' -> 0
+   stz ZP_PTR_1+1
+   asl
+   asl
+   asl
+   asl
+   rol ZP_PTR_1+1
+   asl
+   rol ZP_PTR_1+1
+   asl
+   rol ZP_PTR_1+1 ; * 64
+   clc
+   adc #<pcm_modes
+   sta ZP_PTR_1
+   lda ZP_PTR_1+1
+   adc #>pcm_modes
+   sta ZP_PTR_1+1 ; ZP_PTR_1 = PCM mode structure
+   ldy #1
+   lda (ZP_PTR_1),y
+   sta VERA_audio_ctrl ; flush FIFO and reconfigure PCM
+   lda (ZP_PTR_1)
+   sta VERA_audio_rate ; Set new sample rate
+   ldx #1
+   clc
+   jsr PLOT
+   lda filename
+   jsr CHROUT
+   lda #COLON
+   jsr CHROUT
+   lda #SPACE
+   jsr CHROUT
+   ldy #2
+@name_loop:
+   lda (ZP_PTR_1),y
+   jsr CHROUT
+   iny
+   cpy #25
+   bne @name_loop
+   lda #RETURN
+   jsr CHROUT
+   lda #SPACE
+   jsr CHROUT
+@stats_loop:
+   lda (ZP_PTR_1),y
+   jsr CHROUT
+   iny
+   cpy #64
+   bne @stats_loop
+; load file
+   lda #1
+   ldx #8
+   ldy #0
+   jsr SETLFS
+   lda #FILENAME_LENGTH
+   ldx #<filename
+   ldy #>filename
+   jsr SETNAM
+   lda #1
+   sta RAM_BANK
+   sta sound_bank
+   lda #0
+   ldx #<RAM_WIN
+   stx SOUND_PTR
+   ldy #>RAM_WIN
+   sty SOUND_PTR+1
+   jsr LOAD
+   lda RAM_BANK
+   sta end_bank
+   stx end_addr
+   sty end_addr+1
+   jsr fill
+   rts
+
+fill:
+   stz aflow_trig
+   lda sound_bank
+   cmp end_bank
+   bne @start_fill
+   lda SOUND_PTR
+   cmp end_addr
+   bne @start_fill
+   lda SOUND_PTR+1
+   cmp end_addr+1
+   bne @start_fill
+   jmp @return
+@start_fill:
+   lda sound_bank
+   sta RAM_BANK
+   
+
+@return:
    rts

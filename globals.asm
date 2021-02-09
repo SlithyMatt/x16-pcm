@@ -11,5 +11,7 @@ SOUND_PTR = $3C
 ; --------- Global Variables ---------
 aflow_trig: .byte 0
 sound_bank: .byte 1
+end_bank: .byte 1
+end_addr: .addr $BFFF
 
 .endif
