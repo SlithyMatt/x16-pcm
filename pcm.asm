@@ -1,6 +1,6 @@
 .include "x16.inc"
 
-STOP = $03
+STOP_KEY = $03
 RETURN = $0D
 SPACE = $20
 COLON = $3A
@@ -57,18 +57,18 @@ filename: .byte "a.bin"
 FILENAME_LENGTH = 5
 
 guide1:
-.byte " 'Persona' by Severah [Creative Commons]",RETURN,RETURN
-.byte " Press any letter key (A-Z) to play back",RETURN
-.byte " the song at different sample rates, bit", RETURN
-.byte " depths and in stereo or mono. The 'max'", RETURN
-.byte " time listed for each encoding is how",RETURN
-.byte " much PCM data can fit in 504 kB of free",RETURN,0
+.byte " 'persona' by severah [creative commons]",RETURN,RETURN
+.byte " press any letter key (a-z) to play",RETURN
+.byte " back the song at different sample", RETURN
+.byte " rates, bit depths and in stereo or", RETURN
+.byte " mono. the 'max' time listed for each",RETURN
+.byte " encoding is how much pcm data can fit",RETURN,0
 guide2:
-.byte " banked RAM on the X16. The song will",RETURN
-.byte " play until the 504 kB is exhausted,",RETURN
-.byte " the track is done, or another encoding",RETURN
-.byte " is selected.",RETURN,RETURN
-.byte " Press STOP or Ctrl+C to quit.",0
+.byte " in 504 kb of free banked ram on the",RETURN
+.byte " x16. the song will play until the",RETURN
+.byte " 504 kb is exhausted, the track is",RETURN
+.byte " done, or another encoding is selected.",RETURN,RETURN
+.byte " press stop or ctrl+c to quit.",0
 
 start:
 
@@ -91,7 +91,7 @@ start:
    sta sound_bank
 
    ; print guide
-   ldx #3
+   ldx #4
    ldy #0
    clc
    jsr PLOT
@@ -122,7 +122,7 @@ start:
 mainloop:
    wai
    jsr GETIN
-   cmp #STOP
+   cmp #STOP_KEY
    beq @quit
    cmp #CHAR_A
    bmi @check_aflow
@@ -231,7 +231,7 @@ fill:
 @start_fill:
    lda sound_bank
    sta RAM_BANK
-   
+
 
 @return:
    rts
