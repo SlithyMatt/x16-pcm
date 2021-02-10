@@ -160,11 +160,10 @@ load:
    lda ZP_PTR_1+1
    adc #>pcm_modes
    sta ZP_PTR_1+1 ; ZP_PTR_1 = PCM mode structure
+   stz VERA_audio_rate
    ldy #1
    lda (ZP_PTR_1),y
    sta VERA_audio_ctrl ; flush FIFO and reconfigure PCM
-   lda (ZP_PTR_1)
-   sta VERA_audio_rate ; Set new sample rate
    ldx #1
    clc
    jsr PLOT
@@ -214,6 +213,8 @@ load:
    stx end_addr
    sty end_addr+1
    jsr fill
+   lda (ZP_PTR_1)
+   sta VERA_audio_rate ; Set new sample rate to start playing
    rts
 
 fill:
@@ -244,7 +245,7 @@ fill:
    lda (SOUND_PTR),y
    sta VERA_audio_data
    cpx #0
-   bne @next_partial:
+   bne @next_partial
    cpy end_addr
    beq @return
 @next_partial:
@@ -262,9 +263,16 @@ fill:
    iny
    bne @loop_2k
    cpx #0
-   beq @return
+   beq @next_bank
    dex
    inc SOUND_PTR+1
    bra @loop_2k
+@next_bank:
+   lda SOUND_PTR+1
+   cmp #>ROM_WIN
+   bne @return
+   inc sound_bank
+   lda #>RAM_WIN
+   sta SOUND_PTR+1
 @return:
    rts
