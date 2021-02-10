@@ -205,7 +205,7 @@ load:
    sta sound_bank
    lda #0
    ldx #<RAM_WIN
-   stx SOUND_PTR
+   stx SOUND_PTR ; zero
    ldy #>RAM_WIN
    sty SOUND_PTR+1
    jsr LOAD
@@ -231,7 +231,40 @@ fill:
 @start_fill:
    lda sound_bank
    sta RAM_BANK
-
-
+   cmp end_bank
+   bne @load_2k
+   lda end_addr+1
+   sec
+   sbc SOUND_PTR+1
+   cmp #8
+   bpl @load_2k
+   tax
+   ldy #0
+@partial:
+   lda (SOUND_PTR),y
+   sta VERA_audio_data
+   cpx #0
+   bne @next_partial:
+   cpy end_addr
+   beq @return
+@next_partial:
+   iny
+   bne @partial
+   dex
+   inc SOUND_PTR+1
+   bra @partial
+@load_2k:
+   ldx #8
+   ldy #0
+@loop_2k:
+   lda (SOUND_PTR),y
+   sta VERA_audio_data
+   iny
+   bne @loop_2k
+   cpx #0
+   beq @return
+   dex
+   inc SOUND_PTR+1
+   bra @loop_2k
 @return:
    rts
