@@ -4,4 +4,5 @@ is a "sweet spot" between 4 and 12 kHz where very short samples don't
 take up too much memory and have adequate quality for sound effects 
 including brief speech samples. Reproducing music entirely with PCM is 
 not really workable, but you could certainly use things like drum 
-samples to fill out FM or PSG synthesized tracks.
+samples to fill out FM or PSG synthesized tracks. 
+Please try this program yourself: https://github.com/SlithyMatt/x16-pcm
