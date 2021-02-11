@@ -20,7 +20,7 @@ CLR = $93
 
 .macro PCM_MODE rate, sixteen, stereo, name, stats
    .byte rate
-   .byte $80 | (sixteen << 5) | (stereo << 4)
+   .byte $8F | (sixteen << 5) | (stereo << 4)
    .byte name
    .byte stats
 .endmacro
@@ -43,7 +43,7 @@ PCM_MODE  32,0,0,"qtr-freq 8-bit mono    ","12.207 khz 8-bit mono, max = 42.3 s 
 PCM_MODE  21,1,0,"speech-quality mono    ","8.011 khz 16-bit mono, max = 32.2 s    "
 PCM_MODE  21,0,0,"phone-quality mono     ","8.011 khz 8-bit mono, max = 64.4 s     "
 PCM_MODE  12,1,0,"effects-quality mono   ","4.578 khz 16-bit mono, max = 56.4 s    "
-PCM_MODE  12,0,0,"fx-quality 8-bit (XCI) ","4.578 khz 8-bit mono, max = 112.7 s    "
+PCM_MODE  12,0,0,"fx-quality 8-bit (xci) ","4.578 khz 8-bit mono, max = 112.7 s    "
 PCM_MODE   2,1,1,"whole pop song stereo  ","763 hz 16-bit stereo, max = 169.1 s    "
 PCM_MODE   4,1,0,"whole pop song mono    ","1.526 khz 16-bit mono, max = 169.1 s   "
 PCM_MODE   4,0,1,"whole song 8-bit stereo","1.526 khz 8-bit stereo, max = 169.1 s  "
@@ -53,7 +53,7 @@ PCM_MODE   1,1,0,"minimum mono           ","381 hz 16-bit mono, max = 676.5 s   
 PCM_MODE   1,0,1,"minimum 8-bit stereo   ","381 hz 8-bit stereo, max = 676.5 s     " ; Y
 PCM_MODE   1,0,0,"minimum 8-bit mono     ","381 hz 8-bit mono, max = 1352.9 s      " ; Z
 
-filename: .byte "a.bin"
+filename: .byte "0.bin"
 FILENAME_LENGTH = 5
 
 guide1:
@@ -89,6 +89,8 @@ start:
    stz aflow_trig
    lda #1
    sta sound_bank
+   lda #$30 ; '0'
+   sta filename
 
    ; print guide
    ldx #4
@@ -255,17 +257,17 @@ fill:
    inc SOUND_PTR+1
    bra @partial
 @load_2k:
-   ldx #8
+   ldx #7
    ldy #0
 @loop_2k:
    lda (SOUND_PTR),y
    sta VERA_audio_data
    iny
    bne @loop_2k
+   inc SOUND_PTR+1
    cpx #0
    beq @next_bank
    dex
-   inc SOUND_PTR+1
    bra @loop_2k
 @next_bank:
    lda SOUND_PTR+1
