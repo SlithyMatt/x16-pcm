@@ -1,0 +1,6 @@
+At the other end, the extremely low bit rates
+work as well as expected, which means they
+are basically unusable. The elimination of
+even mid-band frequencies causes distortion
+that makes most samples unintelligible and
+even cuts out most of human speech.

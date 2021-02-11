@@ -1,0 +1,4 @@
+HEADPHONE WARNING: The high bit rates don't
+appear to work correctly with the emulator.
+However, they are so memory hungry that they
+are completely impractical, anyway.
